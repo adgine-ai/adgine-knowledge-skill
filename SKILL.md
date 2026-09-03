@@ -19,7 +19,7 @@ If configuration is missing, ask for an `skkb_` key and run:
 python3 <skill-root>/setup.py --key '<api-key>'
 ```
 
-The default endpoint is production. For Test environment setup, also pass `--base-url https://industry.afrgame.dev:31000`.
+The default endpoint is the Test environment at `https://industry.afrgame.dev:31000`. Pass `--base-url` only when the administrator provides a different environment.
 
 ## Route the request
 

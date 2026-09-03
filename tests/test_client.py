@@ -73,6 +73,11 @@ class FakeConnection:
 
 
 class ClientTests(unittest.TestCase):
+    def test_default_base_url_is_test_environment(self):
+        self.assertEqual(
+            _client.DEFAULT_BASE_URL, "https://industry.afrgame.dev:31000"
+        )
+
     def test_normalize_base_url_accepts_endpoint_and_strips_prefix(self):
         self.assertEqual(
             _client.normalize_base_url("https://example.com/api/v1/skills/kb/"),

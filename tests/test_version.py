@@ -28,16 +28,18 @@ class FakeResponse:
 
 class VersionTests(unittest.TestCase):
     def test_update_urls_are_derived_from_git_origin(self):
-        completed = mock.Mock(stdout="git@github.com:adgine-ai/Adgine-Knowledge.git\n")
+        completed = mock.Mock(
+            stdout="git@github.com:adgine-ai/adgine-knowledge-skill.git\n"
+        )
         with mock.patch("subprocess.run", return_value=completed):
             version_url, release_url = _version._urls_from_git_origin()
         self.assertEqual(
             version_url,
-            "https://raw.githubusercontent.com/adgine-ai/Adgine-Knowledge/main/VERSION",
+            "https://raw.githubusercontent.com/adgine-ai/adgine-knowledge-skill/main/VERSION",
         )
         self.assertEqual(
             release_url,
-            "https://github.com/adgine-ai/Adgine-Knowledge/releases/latest",
+            "https://github.com/adgine-ai/adgine-knowledge-skill/releases/latest",
         )
 
     def test_newer_version_is_detected_and_cached(self):

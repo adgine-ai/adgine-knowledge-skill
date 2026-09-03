@@ -18,10 +18,10 @@ SKILL_ROOT = Path(__file__).resolve().parent.parent
 LOCAL_VERSION_FILE = SKILL_ROOT / "VERSION"
 DEFAULT_VERSION_URL = (
     "https://raw.githubusercontent.com/adgine-ai/"
-    "Adgine-Knowledge/main/VERSION"
+    "adgine-knowledge-skill/main/VERSION"
 )
 DEFAULT_RELEASE_URL = (
-    "https://github.com/adgine-ai/Adgine-Knowledge/releases/latest"
+    "https://github.com/adgine-ai/adgine-knowledge-skill/releases/latest"
 )
 CACHE_SECONDS = 24 * 60 * 60
 

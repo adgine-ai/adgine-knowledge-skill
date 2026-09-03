@@ -23,8 +23,7 @@ from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Seque
 
 SKILL_ROOT = Path(__file__).resolve().parent.parent
 API_PREFIX = "/api/v1/skills/kb"
-DEFAULT_BASE_URL = "https://industry.adgine.ai"
-TEST_BASE_URL = "https://industry.afrgame.dev:31000"
+DEFAULT_BASE_URL = "https://industry.afrgame.dev:31000"
 API_KEY_ENV = "ADGINE_KNOWLEDGE_API_KEY"
 BASE_URL_ENV = "ADGINE_KNOWLEDGE_BASE_URL"
 VERSION = (SKILL_ROOT / "VERSION").read_text(encoding="utf-8").strip()
@@ -518,4 +517,3 @@ def emit_update_notice() -> None:
     except Exception:
         # This deliberately includes all failures: version checks are advisory only.
         return
-

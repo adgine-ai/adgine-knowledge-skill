@@ -27,17 +27,17 @@ Adgine Knowledge 是面向 OpenClaw、WorkBuddy 及其他兼容 `SKILL.md` 的 A
 
 将本仓库以 Git 或本地目录方式安装到支持 Agent Skills 的客户端。仓库根目录就是 Skill 根目录，必须保留 `SKILL.md`、`scripts/` 和 `references/` 的相对结构。
 
-仓库发布后，可以直接把下面这句话发送给 WorkBuddy、OpenClaw、Codex 或其他支持 Git Skill 安装的 Agent：
+可以直接把下面这句话发送给 WorkBuddy、OpenClaw、Codex 或其他支持 Git Skill 安装的 Agent：
 
 ```text
-Install the skill from https://github.com/adgine-ai/Adgine-Knowledge
+Install the skill from https://github.com/adgine-ai/adgine-knowledge-skill
 ```
 
 也可以手动安装：
 
 ```bash
-git clone https://github.com/adgine-ai/Adgine-Knowledge.git
-cd Adgine-Knowledge
+git clone https://github.com/adgine-ai/adgine-knowledge-skill.git
+cd adgine-knowledge-skill
 ```
 
 安装后配置：
@@ -46,19 +46,19 @@ cd Adgine-Knowledge
 python3 setup.py --key 'skkb_xxxxxxxxxxxxxxxxx'
 ```
 
-生产环境默认地址为 `https://industry.adgine.ai`。Test 环境联调：
+当前默认地址就是 Test 环境 `https://industry.afrgame.dev:31000`，因此只配置 API Key 即可：
 
 ```bash
-python3 setup.py \
-  --key 'skkb_xxxxxxxxxxxxxxxxx' \
-  --base-url 'https://industry.afrgame.dev:31000'
+python3 setup.py --key 'skkb_xxxxxxxxxxxxxxxxx'
 ```
+
+只有管理员提供了其他环境地址时才需要额外传入 `--base-url`。
 
 配置保存在仓库根目录的 `.env`，文件权限会设为仅当前用户可读写。也可以不创建文件，直接提供环境变量：
 
 ```text
 ADGINE_KNOWLEDGE_API_KEY=skkb_...
-ADGINE_KNOWLEDGE_BASE_URL=https://industry.adgine.ai
+ADGINE_KNOWLEDGE_BASE_URL=https://industry.afrgame.dev:31000
 ```
 
 不要把 `.env`、API Key 或完整鉴权 Header 发到聊天、日志或 Git。
@@ -84,6 +84,13 @@ python3 scripts/query.py --help
 Skill 会低频、非阻断地读取远程 `VERSION`。发现新版本时只提示，不会自行修改本地代码。Git 安装可在仓库目录执行 `git pull --ff-only`；平台包安装应使用平台的重新安装或更新能力。
 
 可通过 `ADGINE_KNOWLEDGE_VERSION_URL` 指定实际发布仓库的远程 `VERSION` 地址。网络失败不会影响任何知识库操作。
+
+维护者修改根目录的 `VERSION` 并推送到 `main` 后，GitHub Actions 会先运行测试，再创建 `v<version>` Release，同时附加以下两个内容相同、扩展名不同的安装包：
+
+- `adgine-knowledge-v<version>.skill`：适合识别 Agent Skill 包的平台；
+- `adgine-knowledge-v<version>.zip`：通用 ZIP 安装或人工检查。
+
+`.skill` 本质也是 ZIP 文件。普通代码推送不会重复发版；只有 `VERSION` 变化，或者维护者手动运行 Release workflow 时才会触发。
 
 ## 开发校验
 
