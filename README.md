@@ -15,6 +15,7 @@ Adgine Knowledge 是面向 OpenClaw、WorkBuddy 及其他兼容 `SKILL.md` 的 A
 - 查看当前 API Key 绑定的 Skill 知识库
 - 创建、重命名、删除空目录
 - 上传单个或多个文件并等待异步入库
+- 原样保留 UTF-8 中文及其他 Unicode 文件名
 - 查询文件列表、状态、Markdown、元数据和处理历史
 - 下载原文件、修改 Canonical Markdown、上传可审计的新版本
 - 永久删除文件（强制显式确认）

@@ -285,14 +285,13 @@ def _field_part(boundary: str, name: str, value: str) -> bytes:
 
 def _file_header(boundary: str, field: str, path: Path) -> bytes:
     safe_field = _safe_form_token(field, "multipart field name")
-    fallback = path.name.encode("ascii", errors="replace").decode("ascii")
-    fallback = _safe_form_token(fallback, "filename")
+    filename = _safe_form_token(path.name, "filename")
     encoded = urllib.parse.quote(path.name, safe="")
     mime = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
     return (
         f"--{boundary}\r\n"
         f'Content-Disposition: form-data; name="{safe_field}"; '
-        f'filename="{fallback}"; filename*=UTF-8\'\'{encoded}\r\n'
+        f'filename="{filename}"; filename*=UTF-8\'\'{encoded}\r\n'
         f"Content-Type: {mime}\r\n\r\n"
     ).encode("utf-8")
 

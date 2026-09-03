@@ -175,6 +175,8 @@ class ClientTests(unittest.TestCase):
         self.assertEqual(int(connection.headers["Content-Length"]), len(body))
         self.assertEqual(body.count(b'name="files"'), 2)
         self.assertIn(b'name="directory_id"', body)
+        self.assertIn('filename="一.md"'.encode("utf-8"), body)
+        self.assertNotIn(b'filename="?.md"', body)
         self.assertIn(b"first-body", body)
         self.assertIn(b"second-body", body)
         self.assertEqual(connection.headers["Idempotency-Key"], "upload-1")
