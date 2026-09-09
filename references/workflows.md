@@ -21,7 +21,9 @@ Use one `--file` per attachment. Pass `--directory-id` only after resolving the 
 ## Read and update
 
 - Read searchable content with `files.py content <document-id>`.
-- Use `update-markdown` only when the user intends to change canonical searchable text. It does not replace the original binary.
+- Use `append-markdown` when adding new material to the end of an existing document. Pass the addition directly; do not read and merge the whole document in the Skill. Concurrent append ordering is unspecified, but the server retains each accepted append.
+- Use `update-markdown` only when the user intends to replace all canonical searchable text.
+- Both Markdown operations leave the original binary unchanged.
 - Use `new-version` for a replacement PDF, Word document, spreadsheet, presentation, image, or other original. The API returns a new document ID and later archives the old ID.
 - The API currently has no file rename or move operation. State that limitation instead of emulating it with an unsafe delete/reupload sequence.
 
@@ -46,4 +48,3 @@ Run `scripts/check_version.py --force`. If a newer release exists, explain that 
 - Git installation: from the Skill repository, inspect local changes and run `git pull --ff-only` only after the user asks to update.
 - Platform/package installation: use that platform's reinstall or update mechanism.
 - Never silently update, discard local changes, or run destructive Git commands.
-

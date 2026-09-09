@@ -1,6 +1,6 @@
 ---
 name: adgine-knowledge
-description: Access and manage an Adgine Knowledge (Adgine 知识库 / Adgine Wiki / Adgine KB) through its Skill API. Use when the user explicitly asks to save chat content or files into Adgine 知识库, browse or read its documents, search or ask questions against it, update document content or versions, delete its files/directories, configure an skkb_ API key, or check/update this skill. Do not use for generic knowledge-base architecture, Wikipedia, ordinary web search, IndustryKB source-code development, or unrelated Adgine GEO analytics.
+description: Access and manage an Adgine Knowledge (Adgine 知识库 / Adgine Wiki / Adgine KB) through its Skill API. Use when the user explicitly asks to save chat content or files into Adgine 知识库, browse or read its documents, search or ask questions against it, append or update document content or versions, delete its files/directories, configure an skkb_ API key, or check/update this skill. Do not use for generic knowledge-base architecture, Wikipedia, ordinary web search, IndustryKB source-code development, or unrelated Adgine GEO analytics.
 ---
 
 # Adgine Knowledge
@@ -27,7 +27,8 @@ The default endpoint is the production environment at `https://industry.adgine.a
 - Browse folders or files: use `scripts/directories.py list`, `scripts/knowledge_base.py tree`, or `scripts/files.py list`.
 - Read a document: use `scripts/files.py content`; use `download` only when the original binary is needed.
 - Ask the knowledge base: use `scripts/query.py ask`. Report `answer_status` honestly and cite only verified evidence returned by the API.
-- Edit generated Markdown: use `scripts/files.py update-markdown`. This changes canonical searchable content, not the original binary.
+- Append to generated Markdown: use `scripts/files.py append-markdown`. The server serializes concurrent appends; do not read and merge in the Skill.
+- Replace generated Markdown completely: use `scripts/files.py update-markdown`. Both operations change canonical searchable content, not the original binary.
 - Replace a PDF, Word, image, or other original: use `scripts/files.py new-version`, then switch to the returned new document ID.
 - Inspect ingestion problems: use `metadata`, `history`, and `status`.
 - Delete: require explicit user confirmation, then pass `--yes`. Never imply directory deletion is recursive.

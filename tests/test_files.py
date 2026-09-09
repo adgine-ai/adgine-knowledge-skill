@@ -88,7 +88,39 @@ class FilesTests(unittest.TestCase):
         wait_document.assert_called_once()
         wait_snapshot.assert_called_once()
 
+    def test_append_markdown_delegates_merge_and_concurrency_to_server(self):
+        files.ARGS = SimpleNamespace(
+            document_id="doc-1",
+            markdown="## New facts\n\nAppended content",
+            file=None,
+            operation_id="append-1",
+            wait=True,
+            wait_timeout=1,
+            json=True,
+        )
+        with mock.patch.object(
+            files,
+            "request_json",
+            return_value={"document_id": "doc-1", "coalesced": False},
+        ) as request, mock.patch.object(
+            files, "wait_document", return_value={"id": "doc-1", "status": "ready"}
+        ) as wait_document, mock.patch.object(
+            files, "wait_snapshot", return_value={"snapshot_status": "ready"}
+        ) as wait_snapshot, mock.patch.object(files, "print_json") as output:
+            code = files._append_markdown()
+
+        self.assertEqual(code, 0)
+        request.assert_called_once_with(
+            "POST",
+            "/files/doc-1/content/append",
+            body={"markdown": "## New facts\n\nAppended content"},
+            idempotency_key="append-1",
+            attempts=1,
+        )
+        wait_document.assert_called_once_with("doc-1", timeout=1)
+        wait_snapshot.assert_called_once_with(timeout=1)
+        self.assertTrue(output.call_args.args[0]["ok"])
+
 
 if __name__ == "__main__":
     unittest.main()
-

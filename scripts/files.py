@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Upload, inspect, update, version, download, and delete documents."""
+"""Upload, inspect, update, append, version, download, and delete documents."""
 
 from __future__ import annotations
 
@@ -291,6 +291,42 @@ def _update_markdown() -> int:
     return 0 if result["ok"] else 3
 
 
+def _append_markdown() -> int:
+    key = operation_id(ARGS.operation_id, "append-markdown")
+    data = request_json(
+        "POST",
+        f"/files/{ARGS.document_id}/content/append",
+        body={"markdown": _read_markdown_argument()},
+        idempotency_key=key,
+        # Append is intentionally not retried after an ambiguous response: the
+        # server owns ordering/concurrency, while the thin client avoids a
+        # second logical append when it cannot know whether the first arrived.
+        attempts=1,
+    )
+    final = None
+    snapshot = None
+    if ARGS.wait:
+        final = wait_document(ARGS.document_id, timeout=ARGS.wait_timeout)
+        if final.get("status") == "ready":
+            snapshot = wait_snapshot(timeout=ARGS.wait_timeout)
+    result = {
+        "ok": not final or final.get("status") == "ready",
+        "operation_id": key,
+        "data": data,
+        "document": final,
+        "snapshot": snapshot,
+    }
+    if ARGS.json:
+        print_json(result)
+    else:
+        print(f"Markdown 已追加；操作 ID：{key}")
+        if final:
+            print(f"文档状态：{final.get('status', '-')}")
+        if snapshot:
+            print(f"快照状态：{snapshot.get('snapshot_status', '-')}")
+    return 0 if result["ok"] else 3
+
+
 def _new_version() -> int:
     path = Path(ARGS.file).expanduser().resolve()
     _ensure_supported([path])
@@ -407,6 +443,15 @@ def main() -> int:
     _add_wait(update)
     _add_json(update)
 
+    append = subparsers.add_parser(
+        "append-markdown", help="在 Canonical Markdown 末尾追加内容")
+    append.add_argument("document_id")
+    append.add_argument("--markdown")
+    append.add_argument("--file")
+    append.add_argument("--operation-id")
+    _add_wait(append)
+    _add_json(append)
+
     version = subparsers.add_parser("new-version", help="上传原文件的新版本")
     version.add_argument("document_id", help="当前 ready 文档 ID")
     version.add_argument("--file", required=True)
@@ -438,6 +483,8 @@ def main() -> int:
         return _simple_read("processing-history")
     if ARGS.command == "update-markdown":
         return _update_markdown()
+    if ARGS.command == "append-markdown":
+        return _append_markdown()
     if ARGS.command == "new-version":
         return _new_version()
     return _delete()
