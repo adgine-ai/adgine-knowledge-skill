@@ -47,19 +47,19 @@ cd adgine-knowledge-skill
 python3 setup.py --key 'skkb_xxxxxxxxxxxxxxxxx'
 ```
 
-当前默认地址就是 Test 环境 `https://industry.afrgame.dev:31000`，因此只配置 API Key 即可：
+当前默认地址是生产环境 `https://industry.adgine.ai`，因此只配置 API Key 即可：
 
 ```bash
 python3 setup.py --key 'skkb_xxxxxxxxxxxxxxxxx'
 ```
 
-只有管理员提供了其他环境地址时才需要额外传入 `--base-url`。
+只有管理员明确提供了其他环境地址时才需要额外传入 `--base-url`。
 
 配置保存在仓库根目录的 `.env`，文件权限会设为仅当前用户可读写。也可以不创建文件，直接提供环境变量：
 
 ```text
 ADGINE_KNOWLEDGE_API_KEY=skkb_...
-ADGINE_KNOWLEDGE_BASE_URL=https://industry.afrgame.dev:31000
+ADGINE_KNOWLEDGE_BASE_URL=https://industry.adgine.ai
 ```
 
 不要把 `.env`、API Key 或完整鉴权 Header 发到聊天、日志或 Git。

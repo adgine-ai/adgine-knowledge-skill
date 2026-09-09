@@ -73,9 +73,9 @@ class FakeConnection:
 
 
 class ClientTests(unittest.TestCase):
-    def test_default_base_url_is_test_environment(self):
+    def test_default_base_url_is_production_environment(self):
         self.assertEqual(
-            _client.DEFAULT_BASE_URL, "https://industry.afrgame.dev:31000"
+            _client.DEFAULT_BASE_URL, "https://industry.adgine.ai"
         )
 
     def test_normalize_base_url_accepts_endpoint_and_strips_prefix(self):
