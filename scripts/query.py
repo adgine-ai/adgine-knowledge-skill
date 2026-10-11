@@ -72,6 +72,17 @@ def _render(data: Dict[str, Any], operation_key: str = "") -> None:
                 print(f"  {citation['quote']}")
             if citation.get("source_url"):
                 print(f"  {citation['source_url']}")
+    images = [
+        item for item in (data.get("images") or [])
+        if isinstance(item, dict) and item.get("url")
+    ]
+    if images:
+        print("\n相关图片：")
+        for item in images:
+            print(f"- {item.get('caption') or '图片'} [{item.get('asset_id', '-')}]")
+            print(f"  {item['url']}")
+            if item.get("description"):
+                print(f"  {item['description']}")
     usage = data.get("usage") or {}
     if usage:
         print(

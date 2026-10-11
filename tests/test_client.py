@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import json
+import io
+import http.client
 import os
 import sys
 import tempfile
 import unittest
+import urllib.error
 from pathlib import Path
 from unittest import mock
 
@@ -13,6 +16,19 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 import _client  # noqa: E402
+
+
+class DownloadResponse(io.BytesIO):
+    def __init__(self, raw, content_length=None):
+        super().__init__(raw)
+        self.headers = {"Content-Length": str(len(raw) if content_length is None else content_length)}
+
+
+class InterruptedDownload(DownloadResponse):
+    def read(self, size=-1):
+        if self.tell():
+            raise http.client.IncompleteRead(b"", 10)
+        return super().read(3)
 
 
 class FakeResponse:
@@ -73,6 +89,62 @@ class FakeConnection:
 
 
 class ClientTests(unittest.TestCase):
+    def test_download_preserves_image_and_html_bytes_and_authenticates(self):
+        config = _client.Config("https://example.com", "skkb_test")
+        for name, raw in (
+            ("图片.png", b"\x89PNG\r\n\x1a\n\x00\xff"),
+            ("页面.html", "<!doctype html><p>中文</p>".encode("utf-8")),
+        ):
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as directory:
+                target = (Path(directory) / "downloads" / name).resolve()
+                with mock.patch("urllib.request.urlopen", return_value=DownloadResponse(raw)) as fetch:
+                    self.assertEqual(_client.download_to("doc-1", target, config=config), target)
+                self.assertEqual(target.read_bytes(), raw)
+                request = fetch.call_args.args[0]
+                self.assertEqual(request.full_url, "https://example.com/api/v1/skills/kb/files/doc-1/download")
+                self.assertEqual(request.get_header("Authorization"), "Bearer skkb_test")
+                self.assertEqual(list(target.parent.iterdir()), [target])
+
+    def test_failed_download_retains_target_and_cleans_temporary_file(self):
+        config = _client.Config("https://example.com", "skkb_test")
+        for response in (InterruptedDownload(b"partial-data"), DownloadResponse(b"short", 100)):
+            with self.subTest(response=type(response).__name__), tempfile.TemporaryDirectory() as directory:
+                target = Path(directory) / "page.html"
+                target.write_bytes(b"previous file")
+                with mock.patch("urllib.request.urlopen", return_value=response):
+                    with self.assertRaises(_client.ApiError):
+                        _client.download_to("doc-1", target, config=config)
+                self.assertEqual(target.read_bytes(), b"previous file")
+                self.assertEqual(list(target.parent.iterdir()), [target])
+
+    def test_http_error_is_not_saved_as_file(self):
+        config = _client.Config("https://example.com", "skkb_test")
+        error = urllib.error.HTTPError("https://example.com", 403, "Forbidden", {}, io.BytesIO(
+            b'{"code":40300,"message":"insufficient permission"}'
+        ))
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory) / "page.html"
+            with mock.patch("urllib.request.urlopen", side_effect=error):
+                with self.assertRaises(_client.ApiError) as caught:
+                    _client.download_to("doc-1", target, config=config)
+            self.assertEqual(caught.exception.status, 403)
+            self.assertFalse(target.exists())
+            self.assertEqual(list(Path(directory).iterdir()), [])
+
+    def test_download_without_length_and_directory_target(self):
+        config = _client.Config("https://example.com", "skkb_test")
+        with tempfile.TemporaryDirectory() as directory:
+            response = DownloadResponse(b"html")
+            response.headers = {}
+            target = Path(directory) / "page.html"
+            with mock.patch("urllib.request.urlopen", return_value=response):
+                _client.download_to("doc-1", target, config=config)
+            self.assertEqual(target.read_bytes(), b"html")
+            with mock.patch("urllib.request.urlopen") as fetch:
+                with self.assertRaises(_client.ConfigError):
+                    _client.download_to("doc-1", Path(directory), config=config)
+                fetch.assert_not_called()
+
     def test_default_base_url_is_production_environment(self):
         self.assertEqual(
             _client.DEFAULT_BASE_URL, "https://industry.adgine.ai"

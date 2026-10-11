@@ -24,4 +24,13 @@
 - `status=succeeded` plus `answer_status=not_found` is a successful execution with no supported knowledge answer.
 - `429` is quota exhaustion. Stop polling and wait for reset or contact the administrator.
 
+## Downloads and previews
+
+- Use `files.py download` for original images or HTML. `content` and its `--preview-chars` option only read/limit Markdown text; they do not preview original files.
+- `--output` must include a filename and suitable extension. A local existing file needs a deliberate `--force` overwrite.
+- A failed or interrupted download must not be reported as saved. The client cleans up its temporary file and retains any previous target file. Download errors are not automatically retried; retry deliberately after resolving the cause.
+- A direct browser request to `/download` without authentication will fail. Download via the script; never embed the API key in a link.
+- For missing query pictures, check `--include-images` and `query.images` (`ask --json`) or `images` (`status --json`). An empty array means the server returned no pictures.
+- HTML preview may lack relative CSS/images or require a host capability that is unavailable. Report the actual preview outcome independently from download success.
+
 When escalating an issue, provide timestamp, endpoint and method, HTTP status, returned `code`, request/query/document ID, idempotency key, and operation stage. Never provide the API key or Authorization header.

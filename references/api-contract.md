@@ -27,6 +27,26 @@ The configured API key is bound server-side to exactly one Skill knowledge base.
 
 JSON success is normally `{ "code": 0, "data": ..., "message": "ok" }`. Clients must ignore unknown fields. Downloads are raw binary.
 
+Original downloads use `Content-Disposition: attachment` and require `files:read`. The CLI saves those bytes without converting them; `/content` instead returns Canonical Markdown. HTML is downloaded as a file, not hosted as a public web page. Stored original bytes can be read while ingestion is pending; removed/missing originals return `404`. PDF compression, when successful, replaces the uploaded PDF before storage.
+
+`files.py download --json` returns `ok`, `document_id`, absolute `output`, local `file_name`, `file_size` (bytes), and `sha256` calculated from the saved file. `--output` is required; `--force` permits an intentional local overwrite. Names and extensions come from the caller's output path, not from response headers. It does not open a viewer.
+
+## Query images
+
+Set `include_images=true` (`query.py ask --include-images`) to request related image assets. The server may return an empty `images` array even when the answer succeeds. A returned image has this shape:
+
+```json
+{
+  "asset_id": "<image-asset-uuid>",
+  "url": "https://<asset-host>/<image-path>",
+  "caption": "Product diagram",
+  "description": "Diagram description",
+  "sources": []
+}
+```
+
+The CLI's `ask --json` wrapper places the result under `query`, so use `query.images`. `status --json` returns the result directly, so use `images`. Plain text output lists the URLs and captions. Rendering an image requires the host's image capability; the CLI does not display pixels. Do not derive URLs from document IDs or assume a citation's `source_url` is an original-file download URL.
+
 ## Permissions
 
 - `files:read`: knowledge-base, directory, file, content, metadata, history and download reads.

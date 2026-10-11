@@ -421,11 +421,14 @@ def download_to(
             ) as handle:
                 temp_name = handle.name
                 shutil.copyfileobj(response, handle, length=64 * 1024)
+                expected_size = response.headers.get("Content-Length", "")
+                if expected_size.isdecimal() and handle.tell() != int(expected_size):
+                    raise ApiError(0, "下载不完整：实际文件大小与 Content-Length 不一致")
         os.replace(temp_name, target)
         return target
     except urllib.error.HTTPError as exc:
         raise _error_from_payload(exc.code, exc.read()) from exc
-    except (urllib.error.URLError, TimeoutError, OSError) as exc:
+    except (urllib.error.URLError, http.client.HTTPException, TimeoutError, OSError) as exc:
         raise ApiError(0, str(exc)) from exc
     finally:
         if temp_name:

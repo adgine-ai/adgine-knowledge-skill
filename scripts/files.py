@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import tempfile
@@ -233,11 +234,20 @@ def _download() -> int:
     if target.exists() and not ARGS.force:
         raise ConfigError(f"本地文件已存在：{target}；如需覆盖请添加 --force")
     saved = download_to(ARGS.document_id, target)
-    result = {"ok": True, "document_id": ARGS.document_id, "output": str(saved)}
+    digest = hashlib.sha256()
+    with saved.open("rb") as source:
+        for chunk in iter(lambda: source.read(64 * 1024), b""):
+            digest.update(chunk)
+    result = {
+        "ok": True, "document_id": ARGS.document_id, "output": str(saved),
+        "file_name": saved.name, "file_size": saved.stat().st_size,
+        "sha256": digest.hexdigest(),
+    }
     if ARGS.json:
         print_json(result)
     else:
-        print(f"原文件已下载：{saved}")
+        print(f"原文件已下载：{saved}（{format_bytes(result['file_size'])}）")
+        print(f"SHA256：{result['sha256']}")
     return 0
 
 

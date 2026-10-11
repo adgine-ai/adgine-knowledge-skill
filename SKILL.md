@@ -1,6 +1,11 @@
 ---
 name: adgine-knowledge
-description: Access and manage an Adgine Knowledge (Adgine 知识库 / Adgine Wiki / Adgine KB) through its Skill API. Use when the user explicitly asks to save chat content or files into Adgine 知识库, browse or read its documents, search or ask questions against it, append or update document content or versions, delete its files/directories, configure an skkb_ API key, or check/update this skill. Do not use for generic knowledge-base architecture, Wikipedia, ordinary web search, IndustryKB source-code development, or unrelated Adgine GEO analytics.
+display_name: Adgine 知识库
+description: Access and manage Adgine Knowledge (Adgine 知识库 / Adgine Wiki / Adgine KB) through its Skill API. Use when the user explicitly asks to save chat content or files, browse or read documents, download originals, view images or preview HTML from Adgine Knowledge, query its knowledge, update content or versions, delete files/directories, configure an skkb_ key, or check/update this skill. Do not use for generic knowledge-base architecture, Wikipedia, ordinary web search, IndustryKB source-code development, or unrelated Adgine GEO analytics.
+description_zh: 管理 Adgine 知识库，支持保存聊天、上传下载文件、查看图片、获取和预览 HTML、知识查询及文档更新。
+description_en: Manage Adgine Knowledge conversations, file uploads and downloads, images, HTML previews, knowledge queries, and document updates.
+version: 0.1.5
+author: Adgine
 ---
 
 # Adgine Knowledge
@@ -25,8 +30,10 @@ The default endpoint is the production environment at `https://industry.adgine.a
 
 - Save visible chat content or an attachment: follow [references/workflows.md](references/workflows.md), then use `scripts/files.py upload`.
 - Browse folders or files: use `scripts/directories.py list`, `scripts/knowledge_base.py tree`, or `scripts/files.py list`.
-- Read a document: use `scripts/files.py content`; use `download` only when the original binary is needed.
+- Read searchable text: use `scripts/files.py content`. This returns Canonical Markdown, including for HTML and images; it does not return HTML source or the original picture.
+- Download an original, view an image, or preview HTML: follow the file-use section of [references/workflows.md](references/workflows.md). Use `scripts/files.py download <document-id> --output <local-file> --json`, then use available host file/image/browser capabilities to deliver or display it. Do not treat authenticated API endpoints as public download links.
 - Ask the knowledge base: use `scripts/query.py ask`. Report `answer_status` honestly and cite only verified evidence returned by the API.
+- Ask for related pictures: use `scripts/query.py ask --include-images --json`. Read `query.images` for `ask` output, or top-level `images` for `status --json`; display only returned image URLs. An empty array means no image was returned.
 - Append to generated Markdown: use `scripts/files.py append-markdown`. The server serializes concurrent appends; do not read and merge in the Skill.
 - Replace generated Markdown completely: use `scripts/files.py update-markdown`. Both operations change canonical searchable content, not the original binary.
 - Replace a PDF, Word, image, or other original: use `scripts/files.py new-version`, then switch to the returned new document ID.
@@ -48,3 +55,5 @@ Run any script with `--help` for exact arguments. Add `--json` when structured o
 - This API does not create, switch, or delete whole knowledge bases, and currently does not rename or move files.
 
 Read [references/api-contract.md](references/api-contract.md) for protocol details and [references/troubleshooting.md](references/troubleshooting.md) only when handling failures.
+
+For WorkBuddy package installation, configuration, upgrades and acceptance testing, use [references/workbuddy-testing.md](references/workbuddy-testing.md).

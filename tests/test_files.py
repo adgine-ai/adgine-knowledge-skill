@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import hashlib
 import tempfile
 import unittest
 from pathlib import Path
@@ -16,6 +17,29 @@ import files  # noqa: E402
 
 
 class FilesTests(unittest.TestCase):
+    def test_download_reports_saved_artifact_and_requires_explicit_overwrite(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = (Path(directory) / "图片.png").resolve()
+            raw = b"\x89PNG\r\n\x1a\n\x00\xff"
+            files.ARGS = SimpleNamespace(document_id="doc-1", output=str(path), force=False, json=True)
+            def save(_document_id, target):
+                target.write_bytes(raw)
+                return target
+            with mock.patch.object(files, "download_to", side_effect=save) as download, mock.patch.object(files, "print_json") as output:
+                self.assertEqual(files._download(), 0)
+                result = output.call_args.args[0]
+                self.assertEqual(result["output"], str(path))
+                self.assertEqual(result["file_name"], "图片.png")
+                self.assertEqual(result["file_size"], len(raw))
+                self.assertEqual(result["sha256"], hashlib.sha256(raw).hexdigest())
+                download.reset_mock()
+                with self.assertRaises(_client.ConfigError):
+                    files._download()
+                download.assert_not_called()
+                files.ARGS.force = True
+                self.assertEqual(files._download(), 0)
+                download.assert_called_once()
+
     def test_extract_document_id_handles_new_version(self):
         self.assertEqual(files._extract_document_id({"new_document_id": "new-1"}), "new-1")
 

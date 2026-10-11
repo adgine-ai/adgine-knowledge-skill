@@ -9,6 +9,8 @@ Adgine Knowledge 是面向 OpenClaw、WorkBuddy 及其他兼容 `SKILL.md` 的 A
 - “Adgine KB 里有哪些文件？”
 - “查询 Adgine 知识库：标准版适合哪些客户？”
 - “用这个新版 PDF 替换知识库里的旧版本。”
+- “从 Adgine 知识库下载这张图片并展示。”
+- “下载知识库中的 HTML 原文件，并预览页面。”
 
 ## 能力范围
 
@@ -74,6 +76,19 @@ python3 scripts/files.py append-markdown '<document-id>' --file './addition.md' 
 python3 scripts/query.py ask --query '知识库中有哪些产品事实？'
 ```
 
+原件下载与正文读取示例：
+
+```bash
+python3 scripts/files.py download '<image-document-id>' --output './downloads/product.png' --json
+python3 scripts/files.py download '<html-document-id>' --output './downloads/page.html' --json
+python3 scripts/files.py content '<html-document-id>' --output './downloads/page.md' --json
+python3 scripts/query.py ask --query '有哪些相关产品图片？' --include-images --json
+```
+
+`download` 保留服务端存储的文件字节，返回本地绝对路径、文件名、大小和 SHA256；`content` 返回用于检索的 Markdown。图片展示和 HTML 预览由宿主能力完成，下载脚本不会自动打开文件。图片查询的 `ask --json` 结果在 `query.images`，`status --json` 的结果在 `images`；普通输出也会列出返回的图片地址。下载接口需要鉴权，不能当作公开分享链接。
+
+WorkBuddy 可通过“技能 → 添加技能 → 上传技能”导入发布的 ZIP。安装后应配置实际安装目录中的 Skill，并确认版本为 `0.1.5`。完整的配置、测试指令和验收标准见 [WorkBuddy 安装与验收](references/workbuddy-testing.md)。
+
 查看命令帮助：
 
 ```bash
@@ -93,6 +108,8 @@ Skill 会低频、非阻断地读取远程 `VERSION`。发现新版本时只提�
 - `adgine-knowledge-v<version>.zip`：通用 ZIP 安装或人工检查。
 
 `.skill` 本质也是 ZIP 文件。普通代码推送不会重复发版；只有 `VERSION` 变化，或者维护者手动运行 Release workflow 时才会触发。
+
+当前版本 `0.1.5` 补齐图片/HTML 的使用流程、图片查询输出和原件下载校验。发布前运行全部测试并构建安装包，先在 WorkBuddy 导入本地 ZIP 验收，再将包含 `VERSION` 变更的提交推送到 `main`。打包时会校验 `SKILL.md` 的 WorkBuddy 发布字段及其版本与 `VERSION` 一致；包中不包含 `.env`、`.env.*`（保留 `.env.example`）或 `.DS_Store`。GitHub Release 不会自动上架 WorkBuddy 公共技能市场。
 
 ## 开发校验
 

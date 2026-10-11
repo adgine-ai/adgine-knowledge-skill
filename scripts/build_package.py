@@ -22,6 +22,7 @@ EXCLUDE_DIRS = {
 }
 EXCLUDE_FILES = {
     ".env",
+    ".DS_Store",
     ".gitignore",
     "scripts/build_package.py",
 }
@@ -35,6 +36,10 @@ def iter_package_files(root: Path) -> Iterable[Path]:
             continue
         relative = item.relative_to(root)
         if any(part in EXCLUDE_DIRS for part in relative.parts):
+            continue
+        if item.name in {".DS_Store", ".env"} or (
+            item.name.startswith(".env.") and item.name != ".env.example"
+        ):
             continue
         if relative.as_posix() in EXCLUDE_FILES or item.suffix in EXCLUDE_SUFFIXES:
             continue
@@ -51,10 +56,29 @@ def read_version(root: Path) -> str:
 def build_archive(output_path: Path, root: Path) -> None:
     if not (root / "SKILL.md").is_file():
         raise FileNotFoundError("Skill 根目录缺少 SKILL.md")
+    validate_release_metadata(root)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as archive:
         for item in iter_package_files(root):
             archive.write(item, item.relative_to(root).as_posix())
+
+
+def validate_release_metadata(root: Path) -> None:
+    """Validate the single-line release fields used by this WorkBuddy package."""
+    content = (root / "SKILL.md").read_text(encoding="utf-8")
+    frontmatter = re.match(r"\A---\r?\n(.*?)\r?\n---(?:\r?\n|$)", content, re.DOTALL)
+    if frontmatter is None:
+        raise ValueError("SKILL.md 缺少 YAML frontmatter")
+    fields = {}
+    for field in ("name", "description", "description_zh", "description_en", "version", "author"):
+        matches = re.findall(rf"^{field}:[ \t]*(.*)$", frontmatter.group(1), re.MULTILINE)
+        if len(matches) != 1 or not matches[0].strip().strip("\"'"):
+            raise ValueError(f"SKILL.md 缺少或重复发布字段：{field}")
+        fields[field] = matches[0].strip().strip("\"'")
+    if fields["version"] != read_version(root):
+        raise ValueError("SKILL.md version 与 VERSION 不一致")
+    if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", fields["name"]):
+        raise ValueError("SKILL.md name 必须由小写字母、数字和连字符组成")
 
 
 def main() -> int:
@@ -77,4 +101,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
