@@ -11,6 +11,7 @@ import tempfile
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence
 
+from _filters import add_filter_args, read_filters, verify_applied_filters
 from _cli import format_bytes, print_json, run
 from _client import (
     ConfigError,
@@ -162,6 +163,7 @@ def _list() -> int:
         raise ConfigError("page 必须大于等于 1")
     if not 1 <= ARGS.page_size <= 100:
         raise ConfigError("page-size 必须为 1-100")
+    filters = read_filters(ARGS, existing_directory=True)
     data = request_json(
         "GET",
         "/files",
@@ -171,10 +173,18 @@ def _list() -> int:
             "status": ARGS.status,
             "keyword": ARGS.keyword,
             "directory_id": ARGS.directory_id,
+            **({"filters": json.dumps(filters, ensure_ascii=False)} if filters is not None else {}),
         },
     )
     if not isinstance(data, dict):
         raise ConfigError("文件列表接口返回结构不正确")
+    if filters is not None:
+        applied = dict(filters)
+        if ARGS.directory_id:
+            applied["directory_ids"] = list(applied.get("directory_ids") or []) + [ARGS.directory_id]
+        if ARGS.keyword:
+            applied["filename_keyword"] = ARGS.keyword
+        verify_applied_filters(data, applied)
     if ARGS.json:
         print_json(data)
     else:
@@ -410,6 +420,7 @@ def main() -> int:
     listing.add_argument("--status")
     listing.add_argument("--keyword")
     listing.add_argument("--directory-id")
+    add_filter_args(listing, existing_directory=True)
     _add_json(listing)
 
     upload = subparsers.add_parser("upload", help="上传一个或多个文件")
@@ -436,6 +447,11 @@ def main() -> int:
     download.add_argument("--output", required=True)
     download.add_argument("--force", action="store_true")
     _add_json(download)
+
+    setter = subparsers.add_parser("set-query-metadata", help="Replace explicit business metadata; an empty object restores inference")
+    setter.add_argument("document_id")
+    setter.add_argument("--metadata-file", required=True)
+    _add_json(setter)
 
     metadata = subparsers.add_parser("metadata", help="查看文档和快照元数据")
     metadata.add_argument("document_id")
@@ -487,6 +503,16 @@ def main() -> int:
         return _content()
     if ARGS.command == "download":
         return _download()
+    if ARGS.command == "set-query-metadata":
+        try:
+            body = json.loads(Path(ARGS.metadata_file).expanduser().read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            raise ConfigError(f"Cannot read metadata file: {exc}") from exc
+        if not isinstance(body, dict):
+            raise ConfigError("metadata-file must contain a JSON object")
+        data = request_json("PUT", f"/files/{ARGS.document_id}/query-metadata", body=body)
+        print_json(data)
+        return 0
     if ARGS.command == "metadata":
         return _simple_read("metadata")
     if ARGS.command == "history":

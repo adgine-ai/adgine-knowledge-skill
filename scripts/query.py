@@ -8,7 +8,9 @@ from pathlib import Path
 from typing import Any, Dict, Iterable
 
 from _cli import print_json, run
+from _filters import add_filter_args, read_filters, verify_applied_filters
 from _client import (
+    ApiError,
     ConfigError,
     emit_update_notice,
     operation_id,
@@ -45,6 +47,8 @@ def _render(data: Dict[str, Any], operation_key: str = "") -> None:
     print(f"任务状态：{data.get('status', '-')}")
     if data.get("answer_status"):
         print(f"回答状态：{data.get('answer_status')}")
+    if data.get("query_scope"):
+        print_json({"query_scope": data["query_scope"], "coverage": data.get("coverage") or {}})
     if data.get("answer"):
         print("\n回答：")
         print(data["answer"])
@@ -108,6 +112,8 @@ def main() -> int:
     ask.add_argument("--include-images", action="store_true")
     ask.add_argument("--max-sources", type=int, default=12)
     ask.add_argument("--operation-id")
+    ask.add_argument("--mode", choices=["search", "summarize"], default="search")
+    add_filter_args(ask)
     group = ask.add_mutually_exclusive_group()
     group.add_argument("--wait", dest="wait", action="store_true")
     group.add_argument("--no-wait", dest="wait", action="store_false")
@@ -130,6 +136,19 @@ def main() -> int:
     if ARGS.command == "ask":
         if not 1 <= ARGS.max_sources <= 50:
             raise ConfigError("max-sources 必须为 1-50")
+        filters = read_filters(ARGS)
+        scoped = filters is not None or ARGS.mode == "summarize"
+        if scoped:
+            try:
+                capabilities = request_json("GET", "/queries/capabilities")
+            except ApiError as exc:
+                if exc.status == 404:
+                    raise ConfigError("Server does not support filtered queries; update IndustryKB first") from exc
+                raise
+            if not isinstance(capabilities, dict) or capabilities.get("filters_supported") is not True:
+                raise ConfigError("Server does not support filtered queries")
+            if capabilities.get("filter_metadata_ready") is not True:
+                raise ConfigError("Skill filter metadata is not ready; rebuild the server snapshot")
         key = operation_id(ARGS.operation_id, "query")
         data = request_json(
             "POST",
@@ -138,16 +157,22 @@ def main() -> int:
                 "query": _read_query(),
                 "include_images": ARGS.include_images,
                 "max_sources": ARGS.max_sources,
+                **({"filters": filters} if filters is not None else {}),
+                **({"mode": ARGS.mode} if ARGS.mode != "search" else {}),
             },
             idempotency_key=key,
         )
         if not isinstance(data, dict):
             raise ConfigError("查询创建接口返回结构不正确")
+        if scoped:
+            verify_applied_filters(data, filters, ARGS.mode)
         if ARGS.wait and data.get("status") not in {"succeeded", "failed", "cancelled"}:
             query_id = data.get("query_id")
             if not query_id:
                 raise ConfigError("查询创建响应缺少 query_id")
             data = wait_query(query_id, timeout=ARGS.wait_timeout)
+        if scoped:
+            verify_applied_filters(data, filters, ARGS.mode)
         result = {"operation_id": key, "query": data}
         if ARGS.json:
             print_json(result)

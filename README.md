@@ -119,3 +119,25 @@ Skill 会低频、非阻断地读取远程 `VERSION`。发现新版本时只提�
 python3 -m unittest discover -s tests -v
 python3 -m compileall -q scripts setup.py
 ```
+
+## 人员、时间与目录过滤（0.1.6）
+
+查看可用人员身份和目录：
+
+```bash
+python3 scripts/knowledge_base.py query-filters --json
+```
+
+完整汇总唐立兴 2026 年第 41 周的原始工作资料：
+
+```bash
+python3 scripts/query.py ask --query "按项目汇总已完成工作、问题和下一步计划" \
+  --employee-name "唐立兴" --date-from 2026-10-05 --date-to-exclusive 2026-10-12 \
+  --record-kind work_record --record-kind agent_history --record-kind operation_record \
+  --mode summarize --max-sources 50 --json
+```
+
+也支持 `--employee-id`、`--directory-id`、`--directory-path`、`--document-id`、`--report-type`、`--scope`、`--variant`、`--origin`、`--mime-type`、`--filename-keyword` 和 `--filters-file`。
+日期为业务日期，截止日期不包含；目录默认包含子目录。启用过滤时默认排除标明的测试资料、选择同类正式报告的最新修订。首次部署服务端需执行 SQL 迁移并重建 Skill KB 的派生快照，无须重跑 OCR。
+
+请阅读 [过滤查询约定](references/query-filters.md)。

@@ -32,6 +32,9 @@ def main() -> int:
     tree = subparsers.add_parser("tree", help="查看目录树")
     tree.add_argument("--json", action="store_true")
 
+    options = subparsers.add_parser("query-filters", help="Discover exact employee identities, directory paths and record types")
+    options.add_argument("--json", action="store_true")
+
     wait = subparsers.add_parser("wait-ready", help="等待知识库快照就绪")
     wait.add_argument("--timeout", type=float, default=300.0)
     wait.add_argument("--json", action="store_true")
@@ -56,6 +59,10 @@ def main() -> int:
                 f"{format_bytes(data.get('total_bytes'))}/"
                 f"{format_bytes(data.get('max_bytes'))}"
             )
+        return 0
+
+    if ARGS.command == "query-filters":
+        print_json(request_json("GET", "/query-filters"))
         return 0
 
     if ARGS.command == "tree":

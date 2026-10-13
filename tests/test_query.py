@@ -66,6 +66,56 @@ class QueryTests(unittest.TestCase):
         with self.assertRaises(_client.ConfigError):
             query._read_query()
 
+    def test_scoped_summary_sends_exact_business_filters(self):
+        args = ["query.py", "ask", "--query", "总结上周工作", "--no-wait", "--json",
+                "--employee-name", "唐立兴", "--employee-id", "ou_123",
+                "--date-from", "2026-10-05", "--date-to-exclusive", "2026-10-12",
+                "--directory-path", "/信息碎片", "--record-kind", "work_record", "--mode", "summarize"]
+        with mock.patch.object(sys, "argv", args), mock.patch.object(query, "emit_update_notice"), mock.patch.object(
+            query, "request_json", side_effect=[
+                {"filters_supported": True, "filter_metadata_ready": True},
+                {"query_id": "q1", "status": "queued", "query_scope": {"mode": "summarize", "filters": {
+                    "employee_names": ["唐立兴"], "employee_ids": ["ou_123"],
+                    "date_from": "2026-10-05", "date_to_exclusive": "2026-10-12",
+                    "directory_paths": ["/信息碎片"], "record_kinds": ["work_record"]}}}]
+        ) as request, mock.patch.object(query, "print_json"):
+            self.assertEqual(query.main(), 0)
+        body = request.call_args.kwargs["body"]
+        self.assertEqual(body["mode"], "summarize")
+        self.assertEqual(body["filters"], {
+            "employee_names": ["唐立兴"], "employee_ids": ["ou_123"],
+            "date_from": "2026-10-05", "date_to_exclusive": "2026-10-12",
+            "directory_paths": ["/信息碎片"], "record_kinds": ["work_record"],
+        })
+
+    def test_partial_date_filter_is_rejected_before_request(self):
+        with mock.patch.object(sys, "argv", ["query.py", "ask", "--query", "工作", "--date-from", "2026-10-05"]), \
+             mock.patch.object(query, "emit_update_notice"), mock.patch.object(query, "request_json") as request:
+            with self.assertRaises(_client.ConfigError):
+                query.main()
+        request.assert_not_called()
+
+    def test_old_server_is_rejected_before_creating_an_unfiltered_query(self):
+        args = ["query.py", "ask", "--query", "总结工作", "--employee-name", "唐立兴"]
+        with mock.patch.object(sys, "argv", args), mock.patch.object(query, "emit_update_notice"), mock.patch.object(
+            query, "request_json", side_effect=_client.ApiError(404, "not found")
+        ) as request, mock.patch.object(query, "wait_query") as wait:
+            with self.assertRaises(_client.ConfigError):
+                query.main()
+        request.assert_called_once_with("GET", "/queries/capabilities")
+        wait.assert_not_called()
+
+    def test_missing_scope_confirmation_is_not_treated_as_a_filtered_result(self):
+        args = ["query.py", "ask", "--query", "总结工作", "--employee-name", "唐立兴"]
+        with mock.patch.object(sys, "argv", args), mock.patch.object(query, "emit_update_notice"), mock.patch.object(
+            query, "request_json", side_effect=[
+                {"filters_supported": True, "filter_metadata_ready": True},
+                {"query_id": "q1", "status": "queued"}]
+        ), mock.patch.object(query, "wait_query") as wait:
+            with self.assertRaises(_client.ConfigError):
+                query.main()
+        wait.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

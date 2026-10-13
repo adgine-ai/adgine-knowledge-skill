@@ -8,6 +8,7 @@ The configured API key is bound server-side to exactly one Skill knowledge base.
 |---|---|---|
 | GET | `/` | Bound knowledge-base information and snapshot status |
 | GET | `/tree` | Nested directory tree |
+| GET | `/query-filters` | Snapshot-backed employee identities, directory paths and record types |
 | POST | `/dirs` | Create directory |
 | PUT | `/dirs/{id}` | Rename directory |
 | DELETE | `/dirs/{id}` | Delete an empty directory |
@@ -17,11 +18,13 @@ The configured API key is bound server-side to exactly one Skill knowledge base.
 | GET | `/files/{id}/download` | Original binary, not a JSON envelope |
 | GET | `/files/{id}/content` | Canonical Markdown |
 | GET | `/files/{id}/metadata` | Document and snapshot metadata |
+| PUT | `/files/{id}/query-metadata` | Replace explicit business metadata; `{}` restores inference |
 | GET | `/files/{id}/processing-history` | Processing stages and history |
 | PUT | `/files/{id}/content` | Replace canonical Markdown and reindex |
 | POST | `/files/{id}/content/append` | Append Markdown server-side and reindex |
 | POST | `/files/{id}/versions` | Multipart binary replacement, field `file` |
 | DELETE | `/files/{id}` | Permanently delete a document |
+| GET | `/queries/capabilities` | Query permission probe for filter support and metadata readiness |
 | POST | `/queries` | Start a Pi Agent query |
 | GET | `/queries/{query_id}` | Query status and result |
 
@@ -75,3 +78,7 @@ Query terminal states are `succeeded`, `failed`, and `cancelled`. A succeeded qu
 Query text is 1–4000 characters; `max_sources` is 1–50 (default 12). File and total storage limits are environment-controlled; the current default maximum file size is 100 MB. Supported extensions are PDF, DOCX, XLSX, PPTX, TXT, MD, HTML/HTM, PNG, JPG/JPEG, WEBP, BMP, and TIF/TIFF.
 
 Batch upload may return HTTP 200 while individual items contain `error`, `duplicate=true`, or `existing_id`. Inspect every item.
+
+## Filtered queries
+
+See [query-filters.md](query-filters.md) for filter fields, business-date semantics, range enforcement and coverage. `POST /queries` accepts optional `filters` and `mode` (`search` or `summarize`). `GET /files` accepts the same filter object encoded as the `filters` query parameter, returning ready snapshot records. Unknown filter fields are rejected with HTTP 400. Existing queries without filters retain their original scope.
