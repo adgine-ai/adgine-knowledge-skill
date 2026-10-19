@@ -8,9 +8,13 @@ search, reads, evidence validation and fallback answers cannot widen that scope.
 
 1. Resolve the user's task: find an existing formal report, answer a topic, or
    produce a new complete work summary. These use different source selections.
-2. Resolve employee identity with `knowledge_base.py query-filters --json` when
-   needed. Names match exactly; ambiguous names require IDs. Person ownership is
-   different from author, uploader or a person mentioned in a company report.
+2. Use the exact owner name with `--employee-name`; for “my” records, use the
+   verified current user's name. Discover available names with
+   `knowledge_base.py query-filters --json` when needed. Same-name records are
+   queried together across applications, including different people who share a
+   name. Different app_id/open_id values do not make a name query ambiguous.
+   Do not replace the name with an ID or append an ID constraint to this workflow.
+   Person ownership is different from author, uploader or a mention in the body.
 3. Resolve relative dates from the host's actual clock in Asia/Shanghai. Weeks
    start Monday. On 2026-10-12, “this week” is [2026-10-12, 2026-10-19), “last
    week” is [2026-10-05, 2026-10-12). Do not hardcode these example dates.
@@ -30,8 +34,8 @@ personal summary.
 
 | CLI flag | API filter field | Meaning |
 |---|---|---|
-| --employee-name | employee_names | Exact ownership names; repeat for OR |
-| --employee-id | employee_ids | Explicit identity or known alias; repeat for OR |
+| --employee-name | employee_names | Preferred person filter: exact ownership names across applications; repeat for OR |
+| --employee-id | employee_ids | Optional legacy ID constraint; narrows results and is not required for name queries |
 | --date-from | date_from | Inclusive business date |
 | --date-to-exclusive | date_to_exclusive | Exclusive business date |
 | --date-match | date_match | contained (default) or overlap |
@@ -55,6 +59,25 @@ explicit CLI flags override the corresponding fields. No flags means no new
 filters and preserves the existing query behavior. `--mode summarize` enables
 the default filter policy even if no other filter is supplied.
 
+Use name-only person filters for both file discovery and queries:
+
+```bash
+python3 scripts/files.py list --employee-name "唐立兴" \
+  --record-kind formal_report --report-type weekly --scope person \
+  --date-from 2026-10-12 --date-to-exclusive 2026-10-19 --json
+```
+
+`query-filters` groups options by name. Its legacy `ambiguous` field is false;
+source IDs are retained for compatibility, not a list of distinct people to
+choose between. If an older server still rejects a name as ambiguous, report the
+server limitation; do not silently retry with an ID or a wider scope.
+
+For personal formal reports, `latest_only` groups by owner name, scope, report
+type, variant and business period, regardless of source application or folder.
+It chooses the latest source_cutoff, then revision, then document ID. Manual/AI
+variants and different periods remain separate; `--all-revisions` retains all
+versions. Non-personal reports retain their existing grouping.
+
 Dates are business periods, not created_at/updated_at. Default `contained` avoids
 including a whole weekly report in a daily query. `overlap` intentionally includes
 intersecting document periods; it does not prove every event happened on the
@@ -65,7 +88,8 @@ structured Excel/PDF regions. Unknown dates fail closed for a requested date ran
 ## Metadata and coverage
 
 Existing adgine-work-report/adgine-report JSON comments and directory/date headings
-are parsed as data. Unknown or conflicting ownership must be corrected explicitly:
+are parsed as data. A name without application IDs is sufficient for name filtering.
+Missing or incorrect owner names can be corrected explicitly:
 
 ```bash
 python3 scripts/files.py set-query-metadata DOCUMENT_ID --metadata-file metadata.json --json
@@ -76,7 +100,6 @@ Example metadata.json:
 ```json
 {
   "employee_name": "唐立兴",
-  "employee_id": "employee-stable-id",
   "period_start": "2026-10-10",
   "period_end_exclusive": "2026-10-11",
   "record_kind": "work_record",

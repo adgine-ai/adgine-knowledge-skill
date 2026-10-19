@@ -25,7 +25,11 @@ def add_filter_args(parser, *, existing_directory=False):
     for flag in LIST_FLAGS:
         if flag == "directory-id" and existing_directory:
             continue
-        parser.add_argument("--" + flag, action="append", help="Repeat for multiple values")
+        help_text = {
+            "employee-name": "Exact owner name across applications; repeat for OR",
+            "employee-id": "Optional legacy ID constraint; narrows name filters (AND)",
+        }.get(flag, "Repeat for multiple values")
+        parser.add_argument("--" + flag, action="append", help=help_text)
     parser.add_argument("--date-from", help="Business date, YYYY-MM-DD, inclusive")
     parser.add_argument("--date-to-exclusive", help="Business date, YYYY-MM-DD, exclusive")
     parser.add_argument("--date-match", choices=["contained", "overlap"])

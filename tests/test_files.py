@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 import hashlib
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -17,6 +18,22 @@ import files  # noqa: E402
 
 
 class FilesTests(unittest.TestCase):
+    def test_name_listing_preserves_sources_without_adding_identity_filters(self):
+        args = ["files.py", "list", "--employee-name", "示例员工", "--json",
+                "--date-from", "2026-10-12", "--date-to-exclusive", "2026-10-19"]
+        filters = {"employee_names": ["示例员工"], "date_from": "2026-10-12",
+                   "date_to_exclusive": "2026-10-19"}
+        response = {"total": 3, "query_scope": {"filters": {**filters, "employee_ids": []}},
+                    "data": [{"id": key} for key in ("app-a", "app-b", "name-only")]}
+        with mock.patch.object(sys, "argv", args), mock.patch.object(files, "emit_update_notice"), \
+             mock.patch.object(files, "request_json", return_value=response) as request, \
+             mock.patch.object(files, "print_json") as output:
+            self.assertEqual(files.main(), 0)
+        request.assert_called_once()
+        self.assertEqual(request.call_args.args, ("GET", "/files"))
+        self.assertEqual(json.loads(request.call_args.kwargs["params"]["filters"]), filters)
+        self.assertEqual(output.call_args.args[0], response)
+
     def test_download_reports_saved_artifact_and_requires_explicit_overwrite(self):
         with tempfile.TemporaryDirectory() as directory:
             path = (Path(directory) / "图片.png").resolve()

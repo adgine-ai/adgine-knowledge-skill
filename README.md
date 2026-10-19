@@ -120,9 +120,9 @@ python3 -m unittest discover -s tests -v
 python3 -m compileall -q scripts setup.py
 ```
 
-## 人员、时间与目录过滤（0.1.6）
+## 人员、时间与目录过滤
 
-查看可用人员身份和目录：
+查看可用人员姓名和目录：
 
 ```bash
 python3 scripts/knowledge_base.py query-filters --json
@@ -137,7 +137,10 @@ python3 scripts/query.py ask --query "按项目汇总已完成工作、问题和
   --mode summarize --max-sources 50 --json
 ```
 
-也支持 `--employee-id`、`--directory-id`、`--directory-path`、`--document-id`、`--report-type`、`--scope`、`--variant`、`--origin`、`--mime-type`、`--filename-keyword` 和 `--filters-file`。
+人员查询按所属人姓名精确匹配，同名资料跨应用统一查询，不因 app_id、open_id 不同而报歧义。“本人”查询使用已确认的本人姓名，不附带 ID。
+
+也支持用于旧调用兼容的 `--employee-id`（与姓名同时传入时会进一步缩小范围）、`--directory-id`、`--directory-path`、`--document-id`、`--report-type`、`--scope`、`--variant`、`--origin`、`--mime-type`、`--filename-keyword` 和 `--filters-file`。
+个人正式报告按姓名、周期、报告类型及人工／AI 版选择最新修订，不按应用身份或目录拆分。已有姓名的快照采用此规则不需要重新上传或重建。
 日期为业务日期，截止日期不包含；目录默认包含子目录。启用过滤时默认排除标明的测试资料、选择同类正式报告的最新修订。首次部署服务端需执行 SQL 迁移并重建 Skill KB 的派生快照，无须重跑 OCR。
 
 请阅读 [过滤查询约定](references/query-filters.md)。

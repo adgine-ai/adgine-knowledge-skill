@@ -8,7 +8,7 @@ The configured API key is bound server-side to exactly one Skill knowledge base.
 |---|---|---|
 | GET | `/` | Bound knowledge-base information and snapshot status |
 | GET | `/tree` | Nested directory tree |
-| GET | `/query-filters` | Snapshot-backed employee identities, directory paths and record types |
+| GET | `/query-filters` | Snapshot-backed owner names, source IDs, directory paths and record types |
 | POST | `/dirs` | Create directory |
 | PUT | `/dirs/{id}` | Rename directory |
 | DELETE | `/dirs/{id}` | Delete an empty directory |
@@ -82,3 +82,12 @@ Batch upload may return HTTP 200 while individual items contain `error`, `duplic
 ## Filtered queries
 
 See [query-filters.md](query-filters.md) for filter fields, business-date semantics, range enforcement and coverage. `POST /queries` accepts optional `filters` and `mode` (`search` or `summarize`). `GET /files` accepts the same filter object encoded as the `filters` query parameter, returning ready snapshot records. Unknown filter fields are rejected with HTTP 400. Existing queries without filters retain their original scope.
+
+Person queries use exact `employee_names` across application identities. Same-name
+records are included together; differing app_id/open_id values do not cause an
+ambiguity error. `query-filters.employees[].ambiguous` remains false for response
+compatibility. `employee_ids` is an optional legacy constraint; when supplied with
+names it still applies as AND. Personal formal reports with `latest_only` are
+grouped by name, scope, report type, variant and business period, not source ID
+or directory. This query-policy update needs no new metadata schema or snapshot
+rebuild when owner names already exist.

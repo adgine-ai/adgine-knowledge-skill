@@ -4,7 +4,7 @@ display_name: Adgine 知识库
 description: Access and manage Adgine Knowledge (Adgine 知识库 / Adgine Wiki / Adgine KB) through its Skill API. Use when the user explicitly asks to save chat content or files, browse or read documents, download originals, view images or preview HTML from Adgine Knowledge, query its knowledge, update content or versions, delete files/directories, configure an skkb_ key, or check/update this skill. Do not use for generic knowledge-base architecture, Wikipedia, ordinary web search, IndustryKB source-code development, or unrelated Adgine GEO analytics.
 description_zh: 管理 Adgine 知识库，支持保存聊天、上传下载文件、查看图片、获取和预览 HTML、知识查询及文档更新。
 description_en: Manage Adgine Knowledge conversations, file uploads and downloads, images, HTML previews, knowledge queries, and document updates.
-version: 0.1.6
+version: 0.1.7
 author: Adgine
 ---
 
@@ -51,7 +51,8 @@ Run any script with `--help` for exact arguments. Add `--json` when structured o
 - A successful batch-upload HTTP response can still contain per-file errors. Report every failed and duplicate item.
 - Before querying newly uploaded content, wait for every relevant document to become `ready` and for the knowledge-base snapshot to become `ready`.
 - `status=succeeded` does not guarantee an answer. Distinguish `complete`, `insufficient_evidence`, and `not_found`.
-- Resolve “this week/last week/today” to absolute business dates using the host clock, Asia/Shanghai and Monday-based weeks before calling the API. Never substitute the newest report for the requested period. Ask when the period or identity is ambiguous.
+- Resolve “this week/last week/today” to absolute business dates using the host clock, Asia/Shanghai and Monday-based weeks before calling the API. Never substitute the newest report for the requested period. Ask when the period or the requested person’s name cannot be determined.
+- For person queries, use the exact owner name with `--employee-name`. For “my” records, use the verified current user’s name. Same-name records are queried together across applications; do not substitute or add open_id, app_id, or employee_id merely because sources have different IDs. Names match ownership metadata, not mentions in the body.
 - For complete work summaries use `--mode summarize`; inspect `coverage.complete` and report unread or unknown material. `complete` in ordinary search does not prove all selected documents were read.
 - File-list `keyword` searches filenames only. Use `query.py ask` for semantic/content retrieval.
 - This API does not create, switch, or delete whole knowledge bases, and currently does not rename or move files.

@@ -17,6 +17,22 @@ import query  # noqa: E402
 
 
 class QueryTests(unittest.TestCase):
+    def test_name_search_and_summary_do_not_add_identity_constraints(self):
+        for mode in ("search", "summarize"):
+            with self.subTest(mode=mode):
+                args = ["query.py", "ask", "--query", "查看工作", "--employee-name", "示例员工",
+                        "--mode", mode, "--no-wait", "--json"]
+                result = {"query_id": "q-name", "status": "queued", "query_scope": {
+                    "mode": mode, "filters": {"employee_names": ["示例员工"], "employee_ids": []}}}
+                with mock.patch.object(sys, "argv", args), mock.patch.object(query, "emit_update_notice"), \
+                     mock.patch.object(query, "request_json", side_effect=[
+                         {"filters_supported": True, "filter_metadata_ready": True}, result
+                     ]) as request, mock.patch.object(query, "print_json"):
+                    self.assertEqual(query.main(), 0)
+                self.assertEqual(request.call_count, 2)
+                self.assertEqual(request.call_args.args, ("POST", "/queries"))
+                self.assertEqual(request.call_args.kwargs["body"]["filters"], {"employee_names": ["示例员工"]})
+
     def test_render_includes_server_images_without_inventing_missing_urls(self):
         with mock.patch("sys.stdout", new_callable=io.StringIO) as output:
             query._render({"status": "succeeded", "images": [
